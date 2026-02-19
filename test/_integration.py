@@ -5,24 +5,24 @@ Expects the trainer (neural-amp-modeler) and core (NeuralAmpModelerCore) to be
 cloned as siblings of this repo.
 """
 
-import subprocess
-import sys
-from pathlib import Path
+import subprocess as _subprocess
+import sys as _sys
+from pathlib import Path as _Path
 
-import pytest
+import pytest as _pytest
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
+_REPO_ROOT = _Path(__file__).resolve().parents[1]
 _NEURAL_AMP_MODELER_CORE_DIR = _REPO_ROOT.parent / "NeuralAmpModelerCore"
 
 
-def loadmodel_exe_path() -> Path | None:
+def loadmodel_exe_path() -> _Path | None:
     """Path to the loadmodel executable if it exists, else None."""
     if not _NEURAL_AMP_MODELER_CORE_DIR.exists():
         return None
     build = _NEURAL_AMP_MODELER_CORE_DIR / "build"
     if not build.exists():
         return None
-    if sys.platform == "win32":
+    if _sys.platform == "win32":
         exe = build / "tools" / "loadmodel.exe"
     else:
         exe = build / "tools" / "loadmodel"
@@ -30,8 +30,8 @@ def loadmodel_exe_path() -> Path | None:
 
 
 def run_loadmodel(
-    model_path: Path, *, timeout: float = 10.0
-) -> subprocess.CompletedProcess:
+    model_path: _Path, *, timeout: float = 10.0
+) -> _subprocess.CompletedProcess:
     """
     Run NeuralAmpModelerCore's loadmodel tool on a .nam model path.
 
@@ -46,7 +46,7 @@ def run_loadmodel(
             "NeuralAmpModelerCore loadmodel not found: either "
             f"{_NEURAL_AMP_MODELER_CORE_DIR!s} is missing or build/tools/loadmodel is not built."
         )
-    return subprocess.run(
+    return _subprocess.run(
         [str(exe), str(model_path)],
         capture_output=True,
         text=True,
@@ -56,7 +56,7 @@ def run_loadmodel(
 
 _has_loadmodel = loadmodel_exe_path() is not None
 
-requires_loadmodel = pytest.mark.skipif(
+requires_loadmodel = _pytest.mark.skipif(
     not _has_loadmodel,
     reason="NeuralAmpModelerCore not present or loadmodel tool not built",
 )

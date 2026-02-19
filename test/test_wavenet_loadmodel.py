@@ -5,18 +5,18 @@ Assert that models exported by the trainer (neural-amp-modeler) can be loaded
 by the core's loadmodel tool.
 """
 
-import json
-from pathlib import Path
-from tempfile import TemporaryDirectory
+import json as _json
+from pathlib import Path as _Path
+from tempfile import TemporaryDirectory as _TemporaryDirectory
 
-import pytest
+import pytest as _pytest
 
-from integration import run_loadmodel, requires_loadmodel
-from nam.train.lightning_module import LightningModule
+from _integration import run_loadmodel, requires_loadmodel
+from nam.train.lightning_module import LightningModule as _LightningModule
 
 # Activations supported by both Python _activations and NeuralAmpModelerCore loadmodel.
 # (Fasttanh is C++-only; omit it since we build the model in Python.)
-LOADMODEL_ACTIVATIONS = [
+_LOADMODEL_ACTIVATIONS = [
     "Tanh",
     "Hardtanh",
     "ReLU",
@@ -31,7 +31,7 @@ LOADMODEL_ACTIVATIONS = [
     {"name": "PairMultiply", "primary": "Tanh", "secondary": "Sigmoid"},
 ]
 
-FILM_SLOTS = (
+_FILM_SLOTS = (
     "conv_pre_film",
     "conv_post_film",
     "input_mixin_pre_film",
@@ -44,15 +44,15 @@ FILM_SLOTS = (
 
 
 def _load_demonet_config() -> dict:
-    path = Path(__file__).resolve().parents[1] / "configs" / "demonet.json"
-    data = json.loads(path.read_text())
+    path = _Path(__file__).resolve().parents[1] / "configs" / "demonet.json"
+    data = _json.loads(path.read_text())
     data.pop("_notes", None)
     data.pop("_comments", None)
     return data
 
 
 @requires_loadmodel
-@pytest.mark.parametrize("activation", LOADMODEL_ACTIVATIONS)
+@_pytest.mark.parametrize("activation", _LOADMODEL_ACTIVATIONS)
 def test_export_nam_loadmodel_can_load(demonet_config, activation):
     """
     LightningModule.init_from_config(demonet with activation replaced) -> .export()
@@ -61,10 +61,10 @@ def test_export_nam_loadmodel_can_load(demonet_config, activation):
     config = _load_demonet_config()
     for layer in config["net"]["config"]["layers_configs"]:
         layer["activation"] = activation
-    module = LightningModule.init_from_config(config)
+    module = _LightningModule.init_from_config(config)
     module.net.sample_rate = 48000
-    with TemporaryDirectory() as tmpdir:
-        outdir = Path(tmpdir)
+    with _TemporaryDirectory() as tmpdir:
+        outdir = _Path(tmpdir)
         module.net.export(outdir, basename="model")
         nam_path = outdir / "model.nam"
         assert nam_path.exists()
@@ -83,10 +83,10 @@ def test_export_nam_loadmodel_can_load_with_bottleneck(demonet_config):
     config = _load_demonet_config()
     for layer in config["net"]["config"]["layers_configs"]:
         layer["bottleneck"] = 2
-    module = LightningModule.init_from_config(config)
+    module = _LightningModule.init_from_config(config)
     module.net.sample_rate = 48000
-    with TemporaryDirectory() as tmpdir:
-        outdir = Path(tmpdir)
+    with _TemporaryDirectory() as tmpdir:
+        outdir = _Path(tmpdir)
         module.net.export(outdir, basename="model")
         nam_path = outdir / "model.nam"
         assert nam_path.exists()
@@ -105,10 +105,10 @@ def test_export_nam_loadmodel_can_load_with_groups_input(demonet_config):
     config = _load_demonet_config()
     layers_configs = config["net"]["config"]["layers_configs"]
     layers_configs[1]["groups_input"] = 2
-    module = LightningModule.init_from_config(config)
+    module = _LightningModule.init_from_config(config)
     module.net.sample_rate = 48000
-    with TemporaryDirectory() as tmpdir:
-        outdir = Path(tmpdir)
+    with _TemporaryDirectory() as tmpdir:
+        outdir = _Path(tmpdir)
         module.net.export(outdir, basename="model")
         nam_path = outdir / "model.nam"
         assert nam_path.exists()
@@ -133,10 +133,10 @@ def test_export_nam_loadmodel_can_load_with_head1x1(demonet_config):
             "out_channels": head1x1_out_channels,
             "groups": 1,
         }
-    module = LightningModule.init_from_config(config)
+    module = _LightningModule.init_from_config(config)
     module.net.sample_rate = 48000
-    with TemporaryDirectory() as tmpdir:
-        outdir = Path(tmpdir)
+    with _TemporaryDirectory() as tmpdir:
+        outdir = _Path(tmpdir)
         module.net.export(outdir, basename="model")
         nam_path = outdir / "model.nam"
         assert nam_path.exists()
@@ -158,10 +158,10 @@ def test_export_nam_loadmodel_can_load_different_activation_per_layer(demonet_co
     per_layer_activations = ["Tanh", "ReLU"]
     for i, layer in enumerate(layers_configs):
         layer["activation"] = per_layer_activations[i]
-    module = LightningModule.init_from_config(config)
+    module = _LightningModule.init_from_config(config)
     module.net.sample_rate = 48000
-    with TemporaryDirectory() as tmpdir:
-        outdir = Path(tmpdir)
+    with _TemporaryDirectory() as tmpdir:
+        outdir = _Path(tmpdir)
         module.net.export(outdir, basename="model")
         nam_path = outdir / "model.nam"
         assert nam_path.exists()
@@ -173,7 +173,7 @@ def test_export_nam_loadmodel_can_load_different_activation_per_layer(demonet_co
 
 
 @requires_loadmodel
-@pytest.mark.parametrize("film_slot", FILM_SLOTS)
+@_pytest.mark.parametrize("film_slot", _FILM_SLOTS)
 def test_export_nam_loadmodel_can_load_with_film(demonet_config, film_slot):
     """
     LightningModule with one FiLM slot active -> .export() -> loadmodel can load the .nam.
@@ -191,10 +191,10 @@ def test_export_nam_loadmodel_can_load_with_film(demonet_config, film_slot):
                 "out_channels": head_size,
                 "groups": 1,
             }
-    module = LightningModule.init_from_config(config)
+    module = _LightningModule.init_from_config(config)
     module.net.sample_rate = 48000
-    with TemporaryDirectory() as tmpdir:
-        outdir = Path(tmpdir)
+    with _TemporaryDirectory() as tmpdir:
+        outdir = _Path(tmpdir)
         module.net.export(outdir, basename="model")
         nam_path = outdir / "model.nam"
         assert nam_path.exists()
@@ -248,10 +248,10 @@ def test_export_nam_loadmodel_can_load_with_condition_dsp():
         "optimizer": {"lr": 0.004},
         "lr_scheduler": {"class": "ExponentialLR", "kwargs": {"gamma": 0.993}},
     }
-    module = LightningModule.init_from_config(config)
+    module = _LightningModule.init_from_config(config)
     module.net.sample_rate = 48000
-    with TemporaryDirectory() as tmpdir:
-        outdir = Path(tmpdir)
+    with _TemporaryDirectory() as tmpdir:
+        outdir = _Path(tmpdir)
         module.net.export(outdir, basename="model")
         nam_path = outdir / "model.nam"
         assert nam_path.exists()
