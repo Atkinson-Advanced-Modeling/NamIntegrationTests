@@ -39,8 +39,8 @@ jobs:
       - name: Checkout NamIntegrationTests
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event_name == 'workflow_call' && 'Atkinson-Advanced-Modeling/NamIntegrationTests' || github.repository }}
-          ref: ${{ github.event_name == 'workflow_call' && 'main' || github.sha }}
+          repository: Atkinson-Advanced-Modeling/NamIntegrationTests
+          ref: ${{ (github.event_name == 'pull_request' && github.repository == 'Atkinson-Advanced-Modeling/NamIntegrationTests') && github.sha || 'main' }}
           path: NamIntegrationTests
 
       - name: Set refs for each repo
