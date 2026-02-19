@@ -94,4 +94,4 @@ jobs:
       - name: Run integration tests
         env:
           NAM_CORE_DIR: ${{ github.workspace }}/NeuralAmpModelerCore
-        run: pytest test/ -v
+        run: python -m pytest test/ -v
