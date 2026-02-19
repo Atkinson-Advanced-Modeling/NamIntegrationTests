@@ -1,0 +1,85 @@
+name: Integration Tests
+
+on:
+  workflow_call:
+    inputs:
+      source_repo:
+        required: true
+        type: string
+        description: "Repo to test (neural-amp-modeler or NeuralAmpModelerCore)"
+      ref:
+        required: false
+        type: string
+        default: ${{ github.sha }}
+        description: "Ref/branch to checkout for the source repo"
+    secrets:
+      passphrase:
+        required: false
+  workflow_dispatch:
+    inputs:
+      source_repo:
+        required: true
+        type: choice
+        options:
+          - neural-amp-modeler
+          - NeuralAmpModelerCore
+        description: "Repo to test"
+      ref:
+        required: false
+        type: string
+        default: main
+        description: "Ref/branch to checkout for the source repo"
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set refs for each repo
+        id: refs
+        run: |
+          if [ "${{ inputs.source_repo }}" = "neural-amp-modeler" ]; then
+            echo "trainer_ref=${{ inputs.ref }}" >> "$GITHUB_OUTPUT"
+            echo "core_ref=main" >> "$GITHUB_OUTPUT"
+          else
+            echo "trainer_ref=main" >> "$GITHUB_OUTPUT"
+            echo "core_ref=${{ inputs.ref }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout neural-amp-modeler
+        uses: actions/checkout@v4
+        with:
+          repository: sdatkinson/neural-amp-modeler
+          ref: ${{ steps.refs.outputs.trainer_ref }}
+          path: neural-amp-modeler
+
+      - name: Checkout NeuralAmpModelerCore
+        uses: actions/checkout@v4
+        with:
+          repository: sdatkinson/NeuralAmpModelerCore
+          ref: ${{ steps.refs.outputs.core_ref }}
+          path: NeuralAmpModelerCore
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Build NeuralAmpModelerCore loadmodel
+        run: |
+          cd NeuralAmpModelerCore
+          cmake -B build
+          cmake --build build
+          cd ..
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install -e ./neural-amp-modeler
+
+      - name: Run integration tests
+        env:
+          NAM_CORE_DIR: ${{ github.workspace }}/NeuralAmpModelerCore
+        run: pytest test/ -v

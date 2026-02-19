@@ -2,9 +2,10 @@
 Integration helpers (e.g. running external tools like NeuralAmpModelerCore loadmodel).
 
 Expects the trainer (neural-amp-modeler) and core (NeuralAmpModelerCore) to be
-cloned as siblings of this repo.
+cloned as siblings of this repo. In CI, set NAM_CORE_DIR to the core checkout path.
 """
 
+import os as _os
 import subprocess as _subprocess
 import sys as _sys
 from pathlib import Path as _Path
@@ -12,7 +13,10 @@ from pathlib import Path as _Path
 import pytest as _pytest
 
 _REPO_ROOT = _Path(__file__).resolve().parents[1]
-_NEURAL_AMP_MODELER_CORE_DIR = _REPO_ROOT.parent / "NeuralAmpModelerCore"
+_NAM_CORE_DIR = _os.environ.get("NAM_CORE_DIR")
+_NEURAL_AMP_MODELER_CORE_DIR = (
+    _Path(_NAM_CORE_DIR) if _NAM_CORE_DIR else _REPO_ROOT.parent / "NeuralAmpModelerCore"
+)
 
 
 def loadmodel_exe_path() -> _Path | None:
