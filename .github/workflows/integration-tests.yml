@@ -65,6 +65,7 @@ jobs:
           repository: sdatkinson/NeuralAmpModelerCore
           ref: ${{ steps.refs.outputs.core_ref }}
           path: NeuralAmpModelerCore
+          submodules: recursive
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -74,8 +75,8 @@ jobs:
       - name: Build NeuralAmpModelerCore loadmodel
         run: |
           cd NeuralAmpModelerCore
-          cmake -B build
-          cmake --build build
+          cmake -B build -DCMAKE_BUILD_TYPE=Debug
+          cmake --build build -j4
           cd ..
 
       - name: Install dependencies
