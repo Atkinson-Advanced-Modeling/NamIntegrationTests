@@ -1,6 +1,8 @@
 name: Integration Tests
 
 on:
+  pull_request:
+    branches: [main]
   workflow_call:
     inputs:
       source_repo:
@@ -39,7 +41,10 @@ jobs:
       - name: Set refs for each repo
         id: refs
         run: |
-          if [ "${{ inputs.source_repo }}" = "neural-amp-modeler" ]; then
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "trainer_ref=main" >> "$GITHUB_OUTPUT"
+            echo "core_ref=main" >> "$GITHUB_OUTPUT"
+          elif [ "${{ inputs.source_repo }}" = "neural-amp-modeler" ]; then
             echo "trainer_ref=${{ inputs.ref }}" >> "$GITHUB_OUTPUT"
             echo "core_ref=main" >> "$GITHUB_OUTPUT"
           else
