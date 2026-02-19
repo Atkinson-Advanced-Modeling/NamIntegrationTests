@@ -41,6 +41,7 @@ jobs:
         with:
           repository: ${{ github.event_name == 'workflow_call' && 'Atkinson-Advanced-Modeling/NamIntegrationTests' || github.repository }}
           ref: ${{ github.event_name == 'workflow_call' && 'main' || github.sha }}
+          path: NamIntegrationTests
 
       - name: Set refs for each repo
         id: refs
@@ -88,10 +89,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e .
+          pip install -e ./NamIntegrationTests
           pip install -e ./neural-amp-modeler
 
       - name: Run integration tests
         env:
           NAM_CORE_DIR: ${{ github.workspace }}/NeuralAmpModelerCore
-        run: python -m pytest test/ -v
+        run: |
+          cd NamIntegrationTests
+          python -m pytest test/ -v
