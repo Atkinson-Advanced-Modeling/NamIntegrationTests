@@ -36,13 +36,6 @@ jobs:
   integration-tests:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout NamIntegrationTests
-        uses: actions/checkout@v4
-        with:
-          repository: Atkinson-Advanced-Modeling/NamIntegrationTests
-          ref: ${{ (github.event_name == 'pull_request' && github.repository == 'Atkinson-Advanced-Modeling/NamIntegrationTests') && github.sha || 'main' }}
-          path: NamIntegrationTests
-
       - name: Set refs for each repo
         id: refs
         run: |
@@ -57,19 +50,26 @@ jobs:
             echo "core_ref=${{ inputs.ref }}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Checkout NamIntegrationTests
+        uses: actions/checkout@v4
+        with:
+          repository: Atkinson-Advanced-Modeling/NamIntegrationTests
+          ref: ${{ (github.event_name == 'pull_request' && github.repository == 'Atkinson-Advanced-Modeling/NamIntegrationTests') && github.sha || 'main' }}
+          path: integration-run/NamIntegrationTests
+
       - name: Checkout neural-amp-modeler
         uses: actions/checkout@v4
         with:
           repository: sdatkinson/neural-amp-modeler
           ref: ${{ steps.refs.outputs.trainer_ref }}
-          path: neural-amp-modeler
+          path: integration-run/neural-amp-modeler
 
       - name: Checkout NeuralAmpModelerCore
         uses: actions/checkout@v4
         with:
           repository: sdatkinson/NeuralAmpModelerCore
           ref: ${{ steps.refs.outputs.core_ref }}
-          path: NeuralAmpModelerCore
+          path: integration-run/NeuralAmpModelerCore
           submodules: recursive
 
       - name: Set up Python
@@ -78,23 +78,22 @@ jobs:
           python-version: "3.10"
 
       - name: Build NeuralAmpModelerCore loadmodel
+        working-directory: integration-run/NeuralAmpModelerCore
         env:
           CXX: clang++
         run: |
-          cd NeuralAmpModelerCore
           cmake -B build -DCMAKE_BUILD_TYPE=Debug
           cmake --build build -j4
-          cd ..
 
       - name: Install dependencies
+        working-directory: integration-run
         run: |
           python -m pip install --upgrade pip
           pip install -e ./NamIntegrationTests
           pip install -e ./neural-amp-modeler
 
       - name: Run integration tests
+        working-directory: integration-run/NamIntegrationTests
         env:
-          NAM_CORE_DIR: ${{ github.workspace }}/NeuralAmpModelerCore
-        run: |
-          cd NamIntegrationTests
-          python -m pytest test/ -v
+          NAM_CORE_DIR: ${{ github.workspace }}/integration-run/NeuralAmpModelerCore
+        run: python -m pytest test/ -v
