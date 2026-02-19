@@ -73,6 +73,8 @@ jobs:
           python-version: "3.10"
 
       - name: Build NeuralAmpModelerCore loadmodel
+        env:
+          CXX: clang++
         run: |
           cd NeuralAmpModelerCore
           cmake -B build -DCMAKE_BUILD_TYPE=Debug
