@@ -77,7 +77,7 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Build NeuralAmpModelerCore loadmodel
+      - name: Build NeuralAmpModelerCore tools (loadmodel, render)
         working-directory: integration-run/NeuralAmpModelerCore
         env:
           CXX: clang++
