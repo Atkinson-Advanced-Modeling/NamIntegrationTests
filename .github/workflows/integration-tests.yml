@@ -39,7 +39,10 @@ jobs:
       - name: Set refs for each repo
         id: refs
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          # Direct PR to NamIntegrationTests: use main for other repos.
+          # workflow_call from neural-amp-modeler/NeuralAmpModelerCore: github.event_name is
+          # "pull_request" (caller's trigger), so we must also check github.repository.
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.repository }}" = "Atkinson-Advanced-Modeling/NamIntegrationTests" ]; then
             echo "trainer_ref=main" >> "$GITHUB_OUTPUT"
             echo "core_ref=main" >> "$GITHUB_OUTPUT"
           elif [ "${{ inputs.source_repo }}" = "neural-amp-modeler" ]; then
