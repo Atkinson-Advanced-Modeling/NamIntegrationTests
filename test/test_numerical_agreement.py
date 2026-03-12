@@ -11,26 +11,30 @@ from tempfile import TemporaryDirectory as _TemporaryDirectory
 
 import numpy as _np
 import pytest as _pytest
-
-from _configs import (
-    get_all_variant_ids as _get_all_variant_ids,
-    get_config_for_variant as _get_config_for_variant,
-)
-from _integration import run_render as _run_render, requires_render as _requires_render
+from _configs import get_all_variant_ids as _get_all_variant_ids
+from _configs import get_config_for_variant as _get_config_for_variant
+from _integration import requires_render as _requires_render
+from _integration import run_render as _run_render
 from nam.data import np_to_wav, wav_to_np
 from nam.train.lightning_module import LightningModule as _LightningModule
 
 _RTOL = 1e-5
 _ATOL = 1e-6
 
-# Variants with known small trainer/core implementation differences
-_VARIANT_TOLERANCES = {
-    "film_layer1x1_post_film": (1e-5, 0.01),
-}
+
+def _variant_ids_parametrize():
+    return [
+        (
+            _pytest.param(vid, marks=_pytest.mark.xfail(reason="Issue 4"))
+            if vid == "film_layer1x1_post_film"
+            else vid
+        )
+        for vid in _get_all_variant_ids()
+    ]
 
 
 @_requires_render
-@_pytest.mark.parametrize("variant_id", _get_all_variant_ids())
+@_pytest.mark.parametrize("variant_id", _variant_ids_parametrize())
 def test_trainer_core_numerical_agreement(variant_id):
     """
     Export with include_snapshot -> render through core -> compare outputs.
@@ -78,8 +82,7 @@ def test_trainer_core_numerical_agreement(variant_id):
             f"expected {expected_flat.shape}, got {actual_flat.shape}"
         )
 
-        rtol, atol = _VARIANT_TOLERANCES.get(variant_id, (_RTOL, _ATOL))
-        assert _np.allclose(actual_flat, expected_flat, rtol=rtol, atol=atol), (
+        assert _np.allclose(actual_flat, expected_flat, rtol=_RTOL, atol=_ATOL), (
             f"Numerical mismatch for variant {variant_id!r}: "
             f"max |diff| = {_np.max(_np.abs(actual_flat - expected_flat))}"
         )
