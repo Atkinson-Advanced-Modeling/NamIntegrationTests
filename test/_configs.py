@@ -260,6 +260,7 @@ def get_all_variant_ids() -> list[str]:
             "per_layer_activations",
             "condition_dsp",
             "extended_dilations",
+            "slimmable",
         ]
     )
     ids_.extend(f"film_{slot}" for slot in FILM_SLOTS)
