@@ -9,16 +9,11 @@ from pathlib import Path as _Path
 from tempfile import TemporaryDirectory as _TemporaryDirectory
 
 import pytest as _pytest
-
-from _configs import (
-    FILM_SLOTS as _FILM_SLOTS,
-    LOADMODEL_ACTIVATIONS as _LOADMODEL_ACTIVATIONS,
-    get_config_for_variant as _get_config_for_variant,
-)
-from _integration import (
-    run_loadmodel as _run_loadmodel,
-    requires_loadmodel as _requires_loadmodel,
-)
+from _configs import FILM_SLOTS as _FILM_SLOTS
+from _configs import LOADMODEL_ACTIVATIONS as _LOADMODEL_ACTIVATIONS
+from _configs import get_config_for_variant as _get_config_for_variant
+from _integration import requires_loadmodel as _requires_loadmodel
+from _integration import run_loadmodel as _run_loadmodel
 from nam.train.lightning_module import LightningModule as _LightningModule
 
 

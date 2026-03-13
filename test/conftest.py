@@ -1,7 +1,6 @@
 """Pytest configuration and fixtures."""
 
 import pytest as _pytest
-
 from _configs import load_demonet_config
 
 
