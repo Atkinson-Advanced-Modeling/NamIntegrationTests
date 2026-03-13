@@ -147,17 +147,53 @@ def _apply_film(config: dict, film_slot: str) -> None:
             }
 
 
+def _slimmable_config() -> dict:
+    """Minimal slimmable WaveNet config (single layer array, no head1x1, no FiLM)."""
+    return {
+        "net": {
+            "name": "WaveNet",
+            "config": {
+                "layers_configs": [
+                    {
+                        "input_size": 1,
+                        "condition_size": 1,
+                        "head_size": 1,
+                        "channels": 4,
+                        "kernel_size": 3,
+                        "dilations": [1, 2],
+                        "activation": "Tanh",
+                        "head_bias": True,
+                        "slimmable": {
+                            "method": "slice_channels_uniform",
+                            "kwargs": {
+                                "allowed_channels": [2, 4],
+                                "boosting": False,
+                                "init_strategy": "channel_causal",
+                            },
+                        },
+                    }
+                ],
+                "head_scale": 0.02,
+            },
+        },
+        "optimizer": {"lr": 0.004},
+        "lr_scheduler": {"class": "ExponentialLR", "kwargs": {"gamma": 0.993}},
+    }
+
+
 def get_config_for_variant(variant_id: str) -> dict:
     """
     Build a config dict for the given variant_id.
 
     :param variant_id: One of "base", "activation_<name>", "bottleneck",
         "groups_input", "head1x1", "per_layer_activations", "film_<slot>",
-        "condition_dsp".
+        "condition_dsp", "slimmable".
     :return: Deep copy of config, ready for module init.
     """
     if variant_id == "condition_dsp":
         return _copy.deepcopy(_condition_dsp_config())
+    if variant_id == "slimmable":
+        return _copy.deepcopy(_slimmable_config())
     if variant_id == "extended_dilations":
         return _extended_dilations_config()
 
