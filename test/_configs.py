@@ -63,7 +63,7 @@ def _condition_dsp_config() -> dict:
                                 "head_size": 2,
                                 "channels": 2,
                                 "kernel_size": 2,
-                                "dilations": [1],
+                                "dilations": [1, 2],
                                 "activation": "Tanh",
                             }
                         ],
@@ -77,7 +77,7 @@ def _condition_dsp_config() -> dict:
                         "head_size": 1,
                         "channels": 2,
                         "kernel_size": 2,
-                        "dilations": [1],
+                        "dilations": [1, 2],
                         "activation": "Tanh",
                     }
                 ],
@@ -87,6 +87,17 @@ def _condition_dsp_config() -> dict:
         "optimizer": {"lr": 0.004},
         "lr_scheduler": {"class": "ExponentialLR", "kwargs": {"gamma": 0.993}},
     }
+
+
+def _extended_dilations_config() -> dict:
+    """Demonet structure with more dilations to exercise the dilated conv cascade.
+    Production models use ~10 dilations; [1,2,4,8] catches receptive-field bugs
+    that minimal configs (dilations=[1] or [1,2]) might miss.
+    """
+    config = _copy.deepcopy(load_demonet_config())
+    for layer in config["net"]["config"]["layers_configs"]:
+        layer["dilations"] = [1, 2, 4, 8]
+    return config
 
 
 def _apply_activation(config: dict, activation: _Any) -> None:
@@ -147,6 +158,8 @@ def get_config_for_variant(variant_id: str) -> dict:
     """
     if variant_id == "condition_dsp":
         return _copy.deepcopy(_condition_dsp_config())
+    if variant_id == "extended_dilations":
+        return _extended_dilations_config()
 
     config = _copy.deepcopy(load_demonet_config())
 
@@ -210,6 +223,7 @@ def get_all_variant_ids() -> list[str]:
             "head1x1",
             "per_layer_activations",
             "condition_dsp",
+            "extended_dilations",
         ]
     )
     ids_.extend(f"film_{slot}" for slot in FILM_SLOTS)
