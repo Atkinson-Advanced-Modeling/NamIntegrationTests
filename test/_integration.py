@@ -79,6 +79,7 @@ def run_render(
     input_wav_path: _Path,
     output_path: _Path,
     *,
+    slim: float | None = None,
     timeout: float = 30.0,
 ) -> _subprocess.CompletedProcess:
     """
@@ -87,6 +88,7 @@ def run_render(
     :param model_path: Path to a .nam file.
     :param input_wav_path: Path to input WAV file.
     :param output_path: Path for output WAV file.
+    :param slim: Optional slim ratio in [0, 1] for SlimmableWavenet/SlimmableContainer.
     :param timeout: Seconds before the subprocess is killed.
     :return: CompletedProcess from subprocess.run.
     :raises: FileNotFoundError if render executable is not found.
@@ -97,8 +99,12 @@ def run_render(
             "NeuralAmpModelerCore render not found: either "
             f"{_NEURAL_AMP_MODELER_CORE_DIR!s} is missing or build/tools/render is not built."
         )
+    cmd = [str(exe)]
+    if slim is not None:
+        cmd.extend(["--slim", str(slim)])
+    cmd.extend([str(model_path), str(input_wav_path), str(output_path)])
     return _subprocess.run(
-        [str(exe), str(model_path), str(input_wav_path), str(output_path)],
+        cmd,
         capture_output=True,
         text=True,
         timeout=timeout,
