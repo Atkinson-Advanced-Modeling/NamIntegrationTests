@@ -114,6 +114,22 @@ def _apply_groups_input(config: dict) -> None:
     config["net"]["config"]["layers_configs"][1]["groups_input"] = 2
 
 
+def _apply_wavenet_head(config: dict) -> None:
+    """
+    Post-stack Head (Conv1d stack after layer arrays). ``in_channels`` must match
+    the last layer array's ``head_size`` (demonet: 1).
+    """
+    layers_configs = config["net"]["config"]["layers_configs"]
+    last_head_size = layers_configs[-1]["head_size"]
+    config["net"]["config"]["head"] = {
+        "in_channels": last_head_size,
+        "channels": 2,
+        "activation": "Tanh",
+        "out_channels": 1,
+        "kernel_sizes": [3],
+    }
+
+
 def _apply_head1x1(config: dict) -> None:
     layers_configs = config["net"]["config"]["layers_configs"]
     head1x1_out_channels = layers_configs[0]["head_size"]
@@ -230,6 +246,10 @@ def get_config_for_variant(variant_id: str) -> dict:
         _apply_head1x1(config)
         return config
 
+    if variant_id == "wavenet_head":
+        _apply_wavenet_head(config)
+        return config
+
     if variant_id == "per_layer_activations":
         _apply_per_layer_activations(config)
         return config
@@ -257,6 +277,7 @@ def get_all_variant_ids() -> list[str]:
             "bottleneck",
             "groups_input",
             "head1x1",
+            "wavenet_head",
             "per_layer_activations",
             "condition_dsp",
             "extended_dilations",

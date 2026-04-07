@@ -101,6 +101,26 @@ def test_export_nam_loadmodel_can_load_with_head1x1(demonet_config):
 
 
 @_requires_loadmodel
+def test_export_nam_loadmodel_can_load_with_wavenet_head(demonet_config):
+    """
+    WaveNet with post-stack ``head`` (Conv1d stack) -> export -> loadmodel can load the .nam.
+    """
+    config = _get_config_for_variant("wavenet_head")
+    module = _LightningModule.init_from_config(config)
+    module.net.sample_rate = 48000
+    with _TemporaryDirectory() as tmpdir:
+        outdir = _Path(tmpdir)
+        module.net.export(outdir, basename="model")
+        nam_path = outdir / "model.nam"
+        assert nam_path.exists()
+        result = _run_loadmodel(nam_path)
+        assert result.returncode == 0, (
+            "loadmodel failed for wavenet_head: "
+            f"stderr={result.stderr!r} stdout={result.stdout!r}"
+        )
+
+
+@_requires_loadmodel
 def test_export_nam_loadmodel_can_load_different_activation_per_layer(demonet_config):
     """
     Same as test_export_nam_loadmodel_can_load but with a different activation
