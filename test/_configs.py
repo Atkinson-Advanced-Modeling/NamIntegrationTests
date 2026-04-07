@@ -116,13 +116,10 @@ def _apply_groups_input(config: dict) -> None:
 
 def _apply_wavenet_head(config: dict) -> None:
     """
-    Post-stack Head (Conv1d stack after layer arrays). ``in_channels`` must match
-    the last layer array's ``head_size`` (demonet: 1).
+    Post-stack Head (Conv1d stack after layer arrays). Channel width into the head
+    is implied by the last layer array's ``head_size`` (matches trainer export).
     """
-    layers_configs = config["net"]["config"]["layers_configs"]
-    last_head_size = layers_configs[-1]["head_size"]
     config["net"]["config"]["head"] = {
-        "in_channels": last_head_size,
         "channels": 2,
         "activation": "Tanh",
         "out_channels": 1,
