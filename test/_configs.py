@@ -118,12 +118,13 @@ def _apply_wavenet_head(config: dict) -> None:
     """
     Post-stack Head (Conv1d stack after layer arrays). Channel width into the head
     is implied by the last layer array's ``head_size`` (matches trainer export).
+
     """
     config["net"]["config"]["head"] = {
         "channels": 2,
         "activation": "Tanh",
         "out_channels": 1,
-        "kernel_sizes": [3],
+        "kernel_sizes": [3, 2],
     }
 
 
