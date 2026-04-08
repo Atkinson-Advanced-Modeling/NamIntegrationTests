@@ -5,6 +5,7 @@ Assert that models exported by the trainer (neural-amp-modeler) can be loaded
 by the core's loadmodel tool.
 """
 
+import json as _json
 from pathlib import Path as _Path
 from tempfile import TemporaryDirectory as _TemporaryDirectory
 
@@ -178,5 +179,59 @@ def test_export_nam_loadmodel_can_load_with_condition_dsp():
         result = _run_loadmodel(nam_path)
         assert result.returncode == 0, (
             "loadmodel failed for condition_dsp: "
+            f"stderr={result.stderr!r} stdout={result.stdout!r}"
+        )
+
+
+@_requires_loadmodel
+def test_export_nam_loadmodel_can_load_layer_head_rechannel_kernel_gt_1():
+    """
+    Layer-array head rechannel with kernel_size > 1: export -> Core loadmodel.
+    """
+    config = _get_config_for_variant("condition_dsp")
+    for layer in config["net"]["config"]["layers_configs"]:
+        layer["head"]["kernel_size"] = 3
+    cond = config["net"]["config"].get("condition_dsp")
+    if cond is not None:
+        for layer in cond["config"]["layers_configs"]:
+            layer["head"]["kernel_size"] = 3
+    module = _LightningModule.init_from_config(config)
+    module.net.sample_rate = 48000
+    with _TemporaryDirectory() as tmpdir:
+        outdir = _Path(tmpdir)
+        module.net.export(outdir, basename="model")
+        nam_path = outdir / "model.nam"
+        assert nam_path.exists()
+        result = _run_loadmodel(nam_path)
+        assert result.returncode == 0, (
+            "loadmodel failed for layer head kernel_size=3: "
+            f"stderr={result.stderr!r} stdout={result.stdout!r}"
+        )
+
+
+@_requires_loadmodel
+def test_export_nam_loadmodel_accepts_legacy_head_size_head_bias():
+    """
+    NeuralAmpModelerCore must load a .nam whose layer arrays use legacy
+    head_size / head_bias (no nested head object). We export with the new
+    schema, strip to legacy keys, and assert loadmodel succeeds.
+    """
+    config = _get_config_for_variant("condition_dsp")
+    module = _LightningModule.init_from_config(config)
+    module.net.sample_rate = 48000
+    with _TemporaryDirectory() as tmpdir:
+        outdir = _Path(tmpdir)
+        module.net.export(outdir, basename="model")
+        nam_path = outdir / "model.nam"
+        nam_obj = _json.loads(nam_path.read_text(encoding="utf-8"))
+        for layer in nam_obj["config"]["layers"]:
+            head = layer.pop("head")
+            layer["head_size"] = head["out_channels"]
+            layer["head_bias"] = head["bias"]
+        legacy_path = outdir / "model_legacy_head.nam"
+        legacy_path.write_text(_json.dumps(nam_obj), encoding="utf-8")
+        result = _run_loadmodel(legacy_path)
+        assert result.returncode == 0, (
+            "loadmodel failed for legacy head_size/head_bias: "
             f"stderr={result.stderr!r} stdout={result.stdout!r}"
         )
