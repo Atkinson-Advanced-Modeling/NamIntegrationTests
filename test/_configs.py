@@ -60,7 +60,11 @@ def _condition_dsp_config() -> dict:
                             {
                                 "input_size": 1,
                                 "condition_size": 1,
-                                "head_size": 2,
+                                "head": {
+                                    "out_channels": 2,
+                                    "kernel_size": 1,
+                                    "bias": True,
+                                },
                                 "channels": 2,
                                 "kernel_size": 2,
                                 "dilations": [1, 2],
@@ -74,7 +78,7 @@ def _condition_dsp_config() -> dict:
                     {
                         "input_size": 1,
                         "condition_size": 2,
-                        "head_size": 1,
+                        "head": {"out_channels": 1, "kernel_size": 1, "bias": True},
                         "channels": 2,
                         "kernel_size": 2,
                         "dilations": [1, 2],
@@ -114,9 +118,23 @@ def _apply_groups_input(config: dict) -> None:
     config["net"]["config"]["layers_configs"][1]["groups_input"] = 2
 
 
+def _apply_wavenet_head(config: dict) -> None:
+    """
+    Post-stack Head (Conv1d stack after layer arrays). Channel width into the head
+    is implied by the last layer array's ``head.out_channels`` (matches trainer export).
+
+    """
+    config["net"]["config"]["head"] = {
+        "channels": 2,
+        "activation": "Tanh",
+        "out_channels": 1,
+        "kernel_sizes": [3, 2],
+    }
+
+
 def _apply_head1x1(config: dict) -> None:
     layers_configs = config["net"]["config"]["layers_configs"]
-    head1x1_out_channels = layers_configs[0]["head_size"]
+    head1x1_out_channels = layers_configs[0]["head"]["out_channels"]
     for layer in layers_configs:
         layer["head_1x1_config"] = {
             "active": True,
@@ -134,7 +152,7 @@ def _apply_per_layer_activations(config: dict) -> None:
 
 def _apply_film(config: dict, film_slot: str) -> None:
     layers_configs = config["net"]["config"]["layers_configs"]
-    head_size = layers_configs[0]["head_size"]
+    head_size = layers_configs[0]["head"]["out_channels"]
     for layer in layers_configs:
         layer["film_params"] = {
             film_slot: {"active": True, "shift": True, "groups": 1},
@@ -157,12 +175,11 @@ def _slimmable_config() -> dict:
                     {
                         "input_size": 1,
                         "condition_size": 1,
-                        "head_size": 1,
+                        "head": {"out_channels": 1, "kernel_size": 1, "bias": True},
                         "channels": 4,
                         "kernel_size": 3,
                         "dilations": [1, 2],
                         "activation": "Tanh",
-                        "head_bias": True,
                         "slimmable": {
                             "method": "slice_channels_uniform",
                             "kwargs": {
@@ -230,6 +247,10 @@ def get_config_for_variant(variant_id: str) -> dict:
         _apply_head1x1(config)
         return config
 
+    if variant_id == "wavenet_head":
+        _apply_wavenet_head(config)
+        return config
+
     if variant_id == "per_layer_activations":
         _apply_per_layer_activations(config)
         return config
@@ -257,6 +278,7 @@ def get_all_variant_ids() -> list[str]:
             "bottleneck",
             "groups_input",
             "head1x1",
+            "wavenet_head",
             "per_layer_activations",
             "condition_dsp",
             "extended_dilations",
