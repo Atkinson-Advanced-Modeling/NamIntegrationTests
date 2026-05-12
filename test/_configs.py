@@ -47,6 +47,20 @@ def load_demonet_config() -> dict:
     return data
 
 
+def load_stew_packed_config() -> dict:
+    """Load the packed Stew training model config from neural-amp-modeler."""
+    path = (
+        _Path(__file__).resolve().parents[2]
+        / "neural-amp-modeler"
+        / "stew"
+        / "inputs"
+        / "configs"
+        / "packed"
+        / "model.json"
+    )
+    return _json.loads(path.read_text())
+
+
 def _condition_dsp_config() -> dict:
     """WaveNet config with condition_dsp (different structure than demonet)."""
     return {
