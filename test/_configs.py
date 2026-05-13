@@ -48,8 +48,8 @@ def load_demonet_config() -> dict:
 
 
 def load_stew_packed_config() -> dict:
-    """Load the packed Stew training model config from neural-amp-modeler."""
-    path = (
+    """Load the packed Stew training model config, falling back to a bundled copy."""
+    sibling_path = (
         _Path(__file__).resolve().parents[2]
         / "neural-amp-modeler"
         / "stew"
@@ -57,6 +57,11 @@ def load_stew_packed_config() -> dict:
         / "configs"
         / "packed"
         / "model.json"
+    )
+    path = (
+        sibling_path
+        if sibling_path.exists()
+        else _Path(__file__).resolve().parents[1] / "configs" / "stew_packed.json"
     )
     return _json.loads(path.read_text())
 
