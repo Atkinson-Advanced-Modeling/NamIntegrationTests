@@ -23,25 +23,11 @@ _ATOL = 1e-6
 
 
 def _variant_ids_parametrize():
-    return [
-        (
-            _pytest.param(vid, marks=_pytest.mark.xfail(reason="Issue 4"))
-            if vid == "film_layer1x1_post_film"
-            else vid
-        )
-        for vid in _get_all_variant_ids()
-    ]
+    # layer1x1_post_film is covered across its affected gating modes below.
+    return [vid for vid in _get_all_variant_ids() if vid != "film_layer1x1_post_film"]
 
 
-@_requires_render
-@_pytest.mark.parametrize("variant_id", _variant_ids_parametrize())
-def test_trainer_core_numerical_agreement(variant_id):
-    """
-    Export with include_snapshot -> render through core -> compare outputs.
-
-    Runs for each config variant (activations, bottleneck, FiLM, etc.).
-    """
-    config = _get_config_for_variant(variant_id)
+def _assert_trainer_core_numerical_agreement(config, case_id):
     module = _LightningModule.init_from_config(config)
     module.net.sample_rate = 48000
     sample_rate = 48000
@@ -68,7 +54,7 @@ def test_trainer_core_numerical_agreement(variant_id):
         result = _run_render(nam_path, input_wav_path, output_wav_path)
 
         assert result.returncode == 0, (
-            f"render failed for variant {variant_id!r}: "
+            f"render failed for {case_id!r}: "
             f"stderr={result.stderr!r} stdout={result.stdout!r}"
         )
 
@@ -78,14 +64,53 @@ def test_trainer_core_numerical_agreement(variant_id):
         actual_flat = _np.squeeze(actual)
 
         assert expected_flat.shape == actual_flat.shape, (
-            f"Shape mismatch for variant {variant_id!r}: "
+            f"Shape mismatch for {case_id!r}: "
             f"expected {expected_flat.shape}, got {actual_flat.shape}"
         )
 
         assert _np.allclose(actual_flat, expected_flat, rtol=_RTOL, atol=_ATOL), (
-            f"Numerical mismatch for variant {variant_id!r}: "
+            f"Numerical mismatch for {case_id!r}: "
             f"max |diff| = {_np.max(_np.abs(actual_flat - expected_flat))}"
         )
+
+
+@_requires_render
+@_pytest.mark.parametrize("variant_id", _variant_ids_parametrize())
+def test_trainer_core_numerical_agreement(variant_id):
+    """
+    Export with include_snapshot -> render through core -> compare outputs.
+
+    Runs for each config variant (activations, bottleneck, FiLM, etc.).
+    """
+    config = _get_config_for_variant(variant_id)
+    _assert_trainer_core_numerical_agreement(config, variant_id)
+
+
+@_requires_render
+@_pytest.mark.parametrize(
+    ("activation", "gating_mode"),
+    (
+        _pytest.param("Tanh", "none", id="none"),
+        _pytest.param(
+            {
+                "name": "PairMultiply",
+                "primary": "Tanh",
+                "secondary": "Sigmoid",
+            },
+            "gated",
+            id="gated",
+        ),
+    ),
+)
+def test_trainer_core_numerical_agreement_layer1x1_post_film(activation, gating_mode):
+    """Regression coverage for layer1x1 post-FiLM with non-blended gating."""
+    config = _get_config_for_variant("film_layer1x1_post_film")
+    for layer in config["net"]["config"]["layers_configs"]:
+        layer["activation"] = activation
+
+    _assert_trainer_core_numerical_agreement(
+        config, f"layer1x1_post_film_{gating_mode}"
+    )
 
 
 @_requires_render
