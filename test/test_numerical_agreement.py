@@ -100,10 +100,19 @@ def test_trainer_core_numerical_agreement(variant_id):
             "gated",
             id="gated",
         ),
+        _pytest.param(
+            {
+                "name": "PairBlend",
+                "primary": "Tanh",
+                "secondary": "Sigmoid",
+            },
+            "blended",
+            id="blended",
+        ),
     ),
 )
 def test_trainer_core_numerical_agreement_layer1x1_post_film(activation, gating_mode):
-    """Regression coverage for layer1x1 post-FiLM with non-blended gating."""
+    """Regression coverage for layer1x1 post-FiLM across all gating modes."""
     config = _get_config_for_variant("film_layer1x1_post_film")
     for layer in config["net"]["config"]["layers_configs"]:
         layer["activation"] = activation
